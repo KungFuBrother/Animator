@@ -16,9 +16,9 @@
         android:layout_height="wrap_content"
         android:text="animate" />
 
-    <com.smartown.animator.MyAnimView
-        android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+    <!--<com.smartown.animator.MyAnimView-->
+    <!--android:layout_width="match_parent"-->
+    <!--android:layout_height="match_parent" />-->
 
     <com.smartown.animator.WaveLoadingView
         android:layout_width="80dp"

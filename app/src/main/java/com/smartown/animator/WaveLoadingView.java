@@ -1,13 +1,13 @@
 package com.smartown.animator;
 
+import android.animation.Animator;
+import android.animation.AnimatorListenerAdapter;
 import android.animation.ValueAnimator;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Path;
-import android.os.Handler;
-import android.os.Message;
 import android.util.AttributeSet;
 import android.view.View;
 
@@ -17,28 +17,22 @@ import android.view.View;
 public class WaveLoadingView extends View {
 
     private int animationDuration = 5000;
-    private int primaryColor = Color.BLUE;
-    private int secondColor = Color.blue(100);
+    private int waveColor = Color.RED;
 
     private float progress = 0;
 
-    private Path primaryPath = new Path();
-    private Path secondPath = new Path();
+    private Path wavePath = new Path();
+    private Path clipPath = new Path();
 
     private float viewWidth = 0;
     private float waveHeight = 0;
+    private float xSpeed = 0;
+    private float xLength = 0;
+
 
     private ValueAnimator animator;
 
     private Paint paint;
-
-    private Handler handler = new Handler() {
-        @Override
-        public void handleMessage(Message msg) {
-            super.handleMessage(msg);
-            invalidate();
-        }
-    };
 
     public WaveLoadingView(Context context) {
         this(context, null);
@@ -54,12 +48,16 @@ public class WaveLoadingView extends View {
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         super.onMeasure(widthMeasureSpec, heightMeasureSpec);
         viewWidth = Math.min(getMeasuredWidth(), getMeasuredHeight());
-        waveHeight = viewWidth / 8.0f;
+        waveHeight = viewWidth / 16.0f;
+        xSpeed = viewWidth / 64.0f;
+        clipPath.addCircle(viewWidth / 2.0f, viewWidth / 2.0f, viewWidth / 2.0f, Path.Direction.CCW);
+        start();
     }
 
     private void initPaint() {
         paint = new Paint();
         paint.setAntiAlias(true);
+        paint.setColor(waveColor);
     }
 
     private void initAnimator() {
@@ -74,40 +72,40 @@ public class WaveLoadingView extends View {
                 invalidate();
             }
         });
-    }
+        animator.addListener(new AnimatorListenerAdapter() {
+            @Override
+            public void onAnimationRepeat(Animator animation) {
+                super.onAnimationRepeat(animation);
+                xLength = 0;
+            }
+        });
 
-    int w = 0;
+    }
 
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
-        primaryPath.reset();
-        secondPath.reset();
-        w += 4;
+
+        canvas.clipPath(clipPath);
+        wavePath.reset();
+        xLength += xSpeed;
 
         for (int i = 0; i < viewWidth; i++) {
-            primaryPath.lineTo(i, (float) (viewWidth * progress + waveHeight * Math.sin((float) (i + w) / viewWidth * 2 * Math.PI)));
-            secondPath.lineTo(i, (float) (viewWidth * progress - waveHeight * Math.sin((float) (i + w) / viewWidth * 2 * Math.PI)));
+            wavePath.lineTo(i, viewWidth - (float) (viewWidth * progress + waveHeight * Math.sin((i + xLength) / viewWidth * 2 * Math.PI)));
         }
-        primaryPath.lineTo(viewWidth, viewWidth);
-        primaryPath.lineTo(0, viewWidth);
-        primaryPath.close();
+        wavePath.lineTo(viewWidth, viewWidth);
+        wavePath.lineTo(0, viewWidth);
+        wavePath.close();
 
-        secondPath.lineTo(viewWidth, viewWidth);
-        secondPath.lineTo(0, viewWidth);
-        secondPath.close();
-        paint.setColor(primaryColor);
-        canvas.drawPath(primaryPath, paint);
-        paint.setColor(secondColor);
-        canvas.drawPath(secondPath, paint);
-        if (!animator.isRunning()) {
-            start();
-        }
+        canvas.drawPath(wavePath, paint);
     }
-
 
     public void start() {
         animator.start();
+    }
+
+    public void stop() {
+        animator.cancel();
     }
 
 }
